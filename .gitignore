@@ -1,0 +1,20 @@
+venv/
+__pycache__/
+*.pyc
+
+# model weights - too large for git, and Llama-licensed
+my_custom_prompt_guard*/
+guardrail_checkpoints/
+
+# generated data - reproducible from the scripts
+*.jsonl
+
+# secrets & runtime
+.env
+.guard_env
+guard.log
+
+# eval artifacts
+eval_report.json
+ood_results.json
+leakage_report.json
