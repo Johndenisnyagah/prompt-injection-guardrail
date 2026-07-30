@@ -4,6 +4,8 @@ A fine-tuned binary classifier that intercepts prompt-injection attacks before t
 
 Built on Meta's `Llama-Prompt-Guard-2-86M` (mDeBERTa-v3-base backbone), fine-tuned on 12,858 samples aggregated from three public security datasets plus targeted synthetic augmentation.
 
+**Weights:** [Johnnyagah/prompt-injection-guardrail](https://huggingface.co/Johnnyagah/prompt-injection-guardrail)
+
 **Headline result: +33 recall points over the stock base model on out-of-distribution attacks, at ~20–30 ms inference latency.**
 
 ---
