@@ -32,6 +32,14 @@ HARDENING APPLIED (vs. the original draft):
      Torch inference is blocking; running it inline would serialize all
      concurrent requests behind one another.
 
+  7. LONG INPUTS ARE SCANNED IN FULL.
+     The model sees at most 512 tokens. An earlier version truncated every
+     prompt to its first 512 tokens, so harmless padding followed by an
+     injection was never scanned. Prompts are now split into overlapping
+     512-token windows; the prompt's score is the highest window score, so
+     an attack anywhere in the input blocks it. This follows Meta's guidance
+     for Prompt Guard 2 on inputs longer than its context window.
+
 SETUP
     pip install fastapi "uvicorn[standard]"
 
@@ -60,7 +68,7 @@ import secrets
 import sys
 import time
 from contextlib import asynccontextmanager
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import torch
 from fastapi import Depends, FastAPI, Header, HTTPException, status
@@ -75,8 +83,10 @@ MODEL_PATH = os.environ.get("GUARD_MODEL_PATH", "./my_custom_prompt_guard")
 API_KEY = os.environ.get("GUARD_API_KEY")
 THRESHOLD = float(os.environ.get("GUARD_THRESHOLD", "0.5"))
 LOG_PROMPTS = os.environ.get("GUARD_LOG_PROMPTS", "false").lower() == "true"
-MAX_LENGTH = 512
-MAX_BATCH = 32
+MAX_LENGTH = 512        # model context window, in tokens (incl. special tokens)
+WINDOW_OVERLAP = 64     # tokens shared by neighbouring windows
+MAX_BATCH = 32          # prompts per /scan/batch request
+INFER_BATCH = 32        # windows per forward pass
 
 logging.basicConfig(
     level=logging.INFO,
@@ -170,13 +180,76 @@ class ScanResponse(BaseModel):
 # ----------------------------------------------------------------------
 # INFERENCE
 # ----------------------------------------------------------------------
+def _windows(ids: List[int], size: int, overlap: int) -> List[List[int]]:
+    """Split token ids into windows of `size`, neighbours sharing `overlap`.
+
+    Every token lands in at least one window, and a phrase of up to
+    `overlap` tokens that straddles a boundary appears whole in one of them.
+    """
+    if len(ids) <= size:
+        return [ids]
+    step = size - overlap
+    windows, start = [], 0
+    while True:
+        windows.append(ids[start:start + size])
+        if start + size >= len(ids):
+            return windows
+        start += step
+
+
+def _special_frame(tokenizer) -> Tuple[List[int], List[int]]:
+    """Find the special tokens the tokenizer wraps around one sequence.
+
+    Worked out by encoding a probe with and without special tokens, so it
+    does not depend on tokenizer helper methods that differ between
+    transformers versions. For DeBERTa this is ([CLS], [SEP]).
+    """
+    full = tokenizer("hello", add_special_tokens=True)["input_ids"]
+    bare = tokenizer("hello", add_special_tokens=False)["input_ids"]
+    for i in range(len(full) - len(bare) + 1):
+        if full[i:i + len(bare)] == bare:
+            return full[:i], full[i + len(bare):]
+    raise RuntimeError("could not locate the tokenizer's special tokens")
+
+
+def _encode_windows(text: str) -> List[List[int]]:
+    """Tokenise without truncation and return model-ready id windows."""
+    tokenizer = STATE["tokenizer"]
+    head, tail = _special_frame(tokenizer)
+    ids = tokenizer(text, add_special_tokens=False, truncation=False)["input_ids"]
+    body = MAX_LENGTH - len(head) - len(tail)
+    return [head + w + tail for w in _windows(ids, body, WINDOW_OVERLAP)]
+
+
+def _batch_tensors(windows: List[List[int]], pad_id: int, device: str) -> dict:
+    """Right-pad windows to one length and build the attention mask."""
+    width = max(len(w) for w in windows)
+    ids = [w + [pad_id] * (width - len(w)) for w in windows]
+    mask = [[1] * len(w) + [0] * (width - len(w)) for w in windows]
+    return {"input_ids": torch.tensor(ids, device=device),
+            "attention_mask": torch.tensor(mask, device=device)}
+
+
 def _infer(texts: List[str]) -> List[float]:
+    """Return one injection probability per text: the max over its windows."""
     tokenizer, model, device = STATE["tokenizer"], STATE["model"], STATE["device"]
-    enc = tokenizer(texts, return_tensors="pt", truncation=True,
-                    max_length=MAX_LENGTH, padding=True).to(device)
-    with torch.no_grad():
-        probs = torch.nn.functional.softmax(model(**enc).logits, dim=-1)
-    return probs[:, 1].cpu().tolist()  # index 1 = malicious
+    pad_id = tokenizer.pad_token_id or 0
+
+    windows, owner = [], []
+    for i, text in enumerate(texts):
+        for w in _encode_windows(text):
+            windows.append(w)
+            owner.append(i)
+
+    scores = [0.0] * len(texts)
+    for start in range(0, len(windows), INFER_BATCH):
+        enc = _batch_tensors(windows[start:start + INFER_BATCH], pad_id, device)
+        with torch.no_grad():
+            probs = torch.nn.functional.softmax(model(**enc).logits, dim=-1)
+        for j, p in enumerate(probs[:, 1].cpu().tolist()):  # index 1 = malicious
+            k = owner[start + j]
+            scores[k] = max(scores[k], p)
+    return scores
 
 
 def _log_decision(text: str, prob: float, blocked: bool, latency_ms: float):

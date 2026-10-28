@@ -226,6 +226,7 @@ curl -X POST http://127.0.0.1:8000/scan \
 | API key required, `compare_digest` | Startup aborts if unset. Constant-time comparison avoids leaking key content via timing. |
 | Hashed decision logs | Blocked prompts logged as SHA-256 prefix + 120-char preview; full text is opt-in. Doubles as the active-learning harvest for real-world false negatives. |
 | Inference off the event loop | Blocking torch calls would serialize concurrent requests. |
+| Long inputs scanned in full | The model sees 512 tokens at a time. An earlier version truncated every prompt there, so harmless padding followed by an injection was never scanned. Prompts are now split into overlapping 512-token windows and blocked if any window fires ([`tests/test_long_input.py`](tests/test_long_input.py)). Long prompts cost one forward pass per window. |
 | Binds `127.0.0.1` | Not exposed beyond localhost without a deliberate decision. |
 
 ---

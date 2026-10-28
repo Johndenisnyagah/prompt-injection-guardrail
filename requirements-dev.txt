@@ -1,0 +1,6 @@
+# Test dependencies. torch is installed separately from the CPU index in CI.
+transformers>=4.46,<6
+fastapi>=0.110
+httpx>=0.27
+pytest>=8
+pytest-github-actions-annotate-failures>=0.2
