@@ -1,0 +1,8 @@
+{
+  "_comment": "Regression gate for the fine-tuned model. Set on 28 Oct 2026 from the first CI run (58/60, 53/60, 8/100, 7/60, p95 152 ms), with a small margin. Tighten only with a reason; loosening one is a model regression and needs a written explanation in the PR.",
+  "holdout_v3_min_recall": 0.95,
+  "long_input_min_recall": 0.85,
+  "benign_max_fpr": 0.10,
+  "holdout_v2_max_fpr": 0.15,
+  "cpu_short_p95_ms": 300
+}
