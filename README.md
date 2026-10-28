@@ -4,7 +4,7 @@ A fine-tuned binary classifier that intercepts prompt-injection attacks before t
 
 Built on Meta's `Llama-Prompt-Guard-2-86M` (mDeBERTa-v3-base backbone), fine-tuned on 12,858 samples aggregated from three public security datasets plus targeted synthetic augmentation.
 
-**Weights:** [Johnnyagah/prompt-injection-guardrail](https://huggingface.co/Johnnyagah/prompt-injection-guardrail)
+**Weights:** [Johnnyagah/Llama-Prompt-Guard-2-86M-injection-guardrail](https://huggingface.co/Johnnyagah/Llama-Prompt-Guard-2-86M-injection-guardrail) · **Built with Llama** · weights under the [Llama 4 Community License](https://developer.meta.com/ai/llama4/license/), code under MIT ([details](#licences))
 
 **Headline result: 58/60 attacks caught on a clean holdout the model never saw, with 8/100 false positives on a clean benign set.** Both numbers are re-measured in CI on every change to the inference path ([evaluation results](docs/evaluation-results.md)).
 
@@ -237,6 +237,17 @@ curl -X POST http://127.0.0.1:8000/scan \
 | Inference off the event loop | Blocking torch calls would serialize concurrent requests. |
 | Long inputs scanned in full | The model sees 512 tokens at a time. An earlier version truncated every prompt there, so harmless padding followed by an injection was never scanned. Prompts are now split into overlapping 512-token windows and blocked if any window fires ([`tests/test_long_input.py`](tests/test_long_input.py)). Long prompts cost one forward pass per window. |
 | Binds `127.0.0.1` | Not exposed beyond localhost without a deliberate decision. |
+
+---
+
+## Licences
+
+- **Code** in this repository: MIT ([`LICENSE`](LICENSE)).
+- **Model weights** on Hugging Face: a fine-tune of Meta's `Llama-Prompt-Guard-2-86M`, so they are covered by the [Llama 4 Community License](https://developer.meta.com/ai/llama4/license/), not by MIT. The Hugging Face repo carries the licence text, the required Notice, and a name beginning with "Llama", as the licence asks of fine-tuned models. The card's source is [`docs/huggingface-model-card.md`](docs/huggingface-model-card.md).
+- **Built with Llama.**
+- **Training data:** the three public datasets listed above, each under its own licence on Hugging Face.
+
+This is a reading of the licence terms, not legal advice.
 
 ---
 

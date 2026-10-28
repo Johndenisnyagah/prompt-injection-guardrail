@@ -36,7 +36,7 @@ FINE_TUNED = "fine-tuned"
 
 MODELS = {
     FINE_TUNED: {
-        "repo": "Johnnyagah/prompt-injection-guardrail",
+        "repo": "Johnnyagah/Llama-Prompt-Guard-2-86M-injection-guardrail",
         "revision": "ad18028373d3858dcbc160992bdb815fe42f8782",
         "needs_token": False,
     },
