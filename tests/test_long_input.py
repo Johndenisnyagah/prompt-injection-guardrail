@@ -71,3 +71,28 @@ def test_trigger_split_across_boundary_is_still_seen():
     edge = BODY - 1
     phrase = ids[edge - 5: edge + 5]
     assert any(all(t in w for t in phrase) for w in windows)
+
+
+def test_special_frame_found_by_probing(fake_state):
+    tokenizer, _ = fake_state
+    from tests.fakes import CLS_ID, SEP_ID
+    assert guard_app._special_frame(tokenizer) == ([CLS_ID], [SEP_ID])
+
+
+def test_every_window_is_wrapped_in_special_tokens(client, headers, fake_state, monkeypatch):
+    from tests.fakes import CLS_ID, PAD_ID, SEP_ID
+    _, model = fake_state
+    seen = []
+    real_call = model.__class__.__call__
+
+    def spy(self, input_ids, attention_mask=None, **kw):
+        for row, mask in zip(input_ids.tolist(), attention_mask.tolist()):
+            row = [t for t, m in zip(row, mask) if m]
+            seen.append(row)
+            assert PAD_ID not in row
+        return real_call(self, input_ids, attention_mask, **kw)
+
+    monkeypatch.setattr(model.__class__, "__call__", spy)
+    client.post("/scan", json={"prompt": padded_attack(1500)}, headers=headers)
+    assert len(seen) > 1
+    assert all(r[0] == CLS_ID and r[-1] == SEP_ID for r in seen)

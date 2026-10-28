@@ -68,7 +68,7 @@ import secrets
 import sys
 import time
 from contextlib import asynccontextmanager
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import torch
 from fastapi import Depends, FastAPI, Header, HTTPException, status
@@ -197,18 +197,43 @@ def _windows(ids: List[int], size: int, overlap: int) -> List[List[int]]:
         start += step
 
 
+def _special_frame(tokenizer) -> Tuple[List[int], List[int]]:
+    """Find the special tokens the tokenizer wraps around one sequence.
+
+    Worked out by encoding a probe with and without special tokens, so it
+    does not depend on tokenizer helper methods that differ between
+    transformers versions. For DeBERTa this is ([CLS], [SEP]).
+    """
+    full = tokenizer("hello", add_special_tokens=True)["input_ids"]
+    bare = tokenizer("hello", add_special_tokens=False)["input_ids"]
+    for i in range(len(full) - len(bare) + 1):
+        if full[i:i + len(bare)] == bare:
+            return full[:i], full[i + len(bare):]
+    raise RuntimeError("could not locate the tokenizer's special tokens")
+
+
 def _encode_windows(text: str) -> List[List[int]]:
     """Tokenise without truncation and return model-ready id windows."""
     tokenizer = STATE["tokenizer"]
+    head, tail = _special_frame(tokenizer)
     ids = tokenizer(text, add_special_tokens=False, truncation=False)["input_ids"]
-    body = MAX_LENGTH - tokenizer.num_special_tokens_to_add(pair=False)
-    return [tokenizer.build_inputs_with_special_tokens(w)
-            for w in _windows(ids, body, WINDOW_OVERLAP)]
+    body = MAX_LENGTH - len(head) - len(tail)
+    return [head + w + tail for w in _windows(ids, body, WINDOW_OVERLAP)]
+
+
+def _batch_tensors(windows: List[List[int]], pad_id: int, device: str) -> dict:
+    """Right-pad windows to one length and build the attention mask."""
+    width = max(len(w) for w in windows)
+    ids = [w + [pad_id] * (width - len(w)) for w in windows]
+    mask = [[1] * len(w) + [0] * (width - len(w)) for w in windows]
+    return {"input_ids": torch.tensor(ids, device=device),
+            "attention_mask": torch.tensor(mask, device=device)}
 
 
 def _infer(texts: List[str]) -> List[float]:
     """Return one injection probability per text: the max over its windows."""
     tokenizer, model, device = STATE["tokenizer"], STATE["model"], STATE["device"]
+    pad_id = tokenizer.pad_token_id or 0
 
     windows, owner = [], []
     for i, text in enumerate(texts):
@@ -218,8 +243,7 @@ def _infer(texts: List[str]) -> List[float]:
 
     scores = [0.0] * len(texts)
     for start in range(0, len(windows), INFER_BATCH):
-        chunk = windows[start:start + INFER_BATCH]
-        enc = tokenizer.pad({"input_ids": chunk}, return_tensors="pt").to(device)
+        enc = _batch_tensors(windows[start:start + INFER_BATCH], pad_id, device)
         with torch.no_grad():
             probs = torch.nn.functional.softmax(model(**enc).logits, dim=-1)
         for j, p in enumerate(probs[:, 1].cpu().tolist()):  # index 1 = malicious
