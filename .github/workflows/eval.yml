@@ -1,0 +1,72 @@
+name: model-eval
+
+# Tier 2: downloads real weights and runs the regression gate.
+# Runs when the inference path or the evaluation sets change, weekly, and on demand.
+on:
+  pull_request:
+    paths:
+      - app.py
+      - eval/**
+      - scripts/eval_models.py
+      - requirements*.txt
+      - .github/workflows/eval.yml
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+    inputs:
+      sweep:
+        description: Also compare 512/256/128-token windows (slow)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: model-eval-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}   # optional; only the gated base model needs it
+      HF_HUB_DISABLE_PROGRESS_BARS: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install CPU-only torch and dependencies
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements-dev.txt sentencepiece tiktoken protobuf
+      - name: Cache model weights
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ hashFiles('scripts/eval_models.py') }}
+      - name: Evaluate and gate
+        run: python scripts/eval_models.py --out results.json --markdown results.md --gate ${{ inputs.sweep && '--sweep' || '' }}
+      - name: Publish summary
+        if: always()
+        run: |
+          test -f results.md && cat results.md >> "$GITHUB_STEP_SUMMARY"
+          test -f results.json && python - <<'PY'
+          import base64, gzip, pathlib
+          blob = gzip.compress(pathlib.Path("results.json").read_bytes() + b"\n#MD#\n"
+                               + pathlib.Path("results.md").read_bytes())
+          data = base64.b64encode(blob).decode()
+          parts = [data[i:i + 3900] for i in range(0, len(data), 3900)]
+          for n, part in enumerate(parts, 1):
+              print(f"::notice title=eval-results {n}/{len(parts)}::{part}")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-results
+          path: |
+            results.json
+            results.md
