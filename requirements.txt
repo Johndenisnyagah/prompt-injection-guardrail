@@ -7,6 +7,6 @@ datasets>=2.19,<5
 pandas>=2.0,<3
 scikit-learn>=1.4,<2
 numpy>=1.26,<3
-huggingface_hub>=0.23,<1
+huggingface_hub>=2.2.0,<3
 fastapi>=0.110,<1
 uvicorn[standard]>=0.29,<1
