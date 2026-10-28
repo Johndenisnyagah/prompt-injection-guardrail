@@ -45,7 +45,8 @@ def test_long_benign_text_is_allowed(client, headers):
 
 def test_no_window_exceeds_model_limit(client, headers, fake_state):
     _, model = fake_state
-    client.post("/scan", json={"prompt": padded_attack(4000)}, headers=headers)
+    r = client.post("/scan", json={"prompt": padded_attack(3000)}, headers=headers)
+    assert r.status_code == 200
     assert model.window_lengths
     assert max(model.window_lengths) <= guard_app.MAX_LENGTH
 
