@@ -32,13 +32,19 @@ class FakeTokenizer:
         return self.vocab[word]
 
     def __call__(self, text, add_special_tokens=True, truncation=False,
-                 max_length=None, **kwargs):
+                 max_length=None, return_tensors=None, padding=False, **kwargs):
+        if isinstance(text, list):  # batch call, as Hugging Face allows
+            rows = [self(t, add_special_tokens, truncation, max_length)["input_ids"]
+                    for t in text]
+            return self.pad({"input_ids": rows}) if return_tensors else {"input_ids": rows}
         ids = [self._id(w) for w in text.split()]
         if truncation and max_length is not None:
             room = max_length - (2 if add_special_tokens else 0)
             ids = ids[:room]
         if add_special_tokens:
             ids = [CLS_ID] + ids + [SEP_ID]
+        if return_tensors:
+            return self.pad({"input_ids": [ids]})
         return {"input_ids": ids}
 
     def num_special_tokens_to_add(self, pair=False):
