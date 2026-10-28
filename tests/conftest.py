@@ -8,9 +8,9 @@ import pytest
 os.environ.setdefault("GUARD_API_KEY", "test-key")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import app as guard_app  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
+import app as guard_app  # noqa: E402
 from tests.fakes import FakeModel, FakeTokenizer  # noqa: E402
 
 API_KEY = "test-key"

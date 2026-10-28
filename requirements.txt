@@ -1,10 +1,12 @@
-torch>=2.0
-transformers>=4.40
-accelerate
-datasets
-pandas
-scikit-learn
-numpy
-huggingface_hub
-fastapi
-uvicorn[standard]
+# Upper bounds keep a new major release from silently changing results.
+# Dependabot proposes updates weekly; CI must pass before one is merged.
+torch>=2.2,<3
+transformers>=4.46,<6
+accelerate>=0.30,<2
+datasets>=2.19,<5
+pandas>=2.0,<3
+scikit-learn>=1.4,<2
+numpy>=1.26,<3
+huggingface_hub>=0.23,<1
+fastapi>=0.110,<1
+uvicorn[standard]>=0.29,<1

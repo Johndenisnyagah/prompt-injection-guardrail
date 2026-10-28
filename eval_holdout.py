@@ -2,7 +2,7 @@
 eval_holdout.py
 ---------------
 Evaluates the ONE dataset that has never influenced training or model selection:
-hard_negatives_v3_holdout.jsonl -- 60 system-reference attacks written in
+eval/holdout_v3.jsonl -- 60 system-reference attacks written in
 vocabulary that appears nowhere in train.jsonl ("standing orders",
 "handover notes", "protocol sheet", "boot instructions"...).
 
@@ -15,12 +15,13 @@ Run:  python3 eval_holdout.py
 """
 
 import json
+
 import numpy as np
 import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 MODEL_PATH = "./my_custom_prompt_guard"
-HOLDOUT = "hard_negatives_v3_holdout.jsonl"
+HOLDOUT = "eval/holdout_v3.jsonl"
 THRESHOLD = 0.5
 BATCH_SIZE = 32
 
@@ -34,7 +35,6 @@ def main():
                 rows.append(json.loads(line))
 
     texts = [r["text"] for r in rows]
-    labels = np.array([r["label"] for r in rows])
 
     tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
     model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH)

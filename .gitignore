@@ -8,6 +8,8 @@ guardrail_checkpoints/
 
 # generated data - reproducible from the scripts
 *.jsonl
+# ...except the fixed evaluation sets, which CI checks
+!eval/*.jsonl
 
 # secrets & runtime
 .env

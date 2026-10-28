@@ -1,16 +1,16 @@
 import os
+
 import torch
 from datasets import load_dataset
 from transformers import (
-    AutoTokenizer, 
-    AutoModelForSequenceClassification, 
-    Trainer, 
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    DataCollatorWithPadding,
+    Trainer,
     TrainingArguments,
-    DataCollatorWithPadding
 )
 
 # 🔑 PASTE YOUR HUGGING FACE TOKEN HERE (KEEP THE QUOTES)
-import os
 HF_TOKEN = os.environ.get("HF_TOKEN") 
 
 MODEL_ID = "meta-llama/Llama-Prompt-Guard-2-86M"

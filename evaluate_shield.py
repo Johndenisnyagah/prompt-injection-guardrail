@@ -16,9 +16,10 @@ Run:  python3 evaluate_shield.py
 
 import json
 import time
+
 import numpy as np
 import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 # ----------------------------------------------------------------------
 # CONFIG

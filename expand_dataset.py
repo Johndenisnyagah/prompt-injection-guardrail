@@ -1,4 +1,5 @@
 import json
+
 import pandas as pd
 from datasets import load_dataset
 from sklearn.model_selection import train_test_split
@@ -80,7 +81,7 @@ print(f"🧹 Removed {before_dedup - len(df)} duplicate prompts.")
 benign_df = df[df["label"] == 0]
 injection_df = df[df["label"] == 1]
 
-print(f"\n📈 Current Class Counts:")
+print("\n📈 Current Class Counts:")
 print(f"   • Safe / Benign (0): {len(benign_df)}")
 print(f"   • Injection (1):    {len(injection_df)}")
 

@@ -1,0 +1,6 @@
+target-version = "py311"
+line-length = 100
+
+[lint]
+# pyflakes, import order, and the pycodestyle errors that catch real bugs
+select = ["E4", "E7", "E9", "F", "I"]
