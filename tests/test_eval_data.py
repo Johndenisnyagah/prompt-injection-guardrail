@@ -96,3 +96,24 @@ def test_validation_set_matches_validate_shield():
     expected = ([{"text": t, "label": 1} for t in lists["OOD_ATTACKS"]]
                 + [{"text": t, "label": 0} for t in lists["OOD_BENIGN"]])
     assert load_jsonl(EVAL / "ood_validation.jsonl") == expected
+
+
+def test_benign_fpr_set_is_benign_unique_and_disjoint():
+    rows = load_jsonl(EVAL / "benign_fpr.jsonl")
+    assert len(rows) == 100
+    assert {r["label"] for r in rows} == {0}
+    texts = [r["text"].lower() for r in rows]
+    assert len(set(texts)) == len(texts)
+    others = {r["text"].lower() for name in ("ood_validation.jsonl", "holdout_v2.jsonl",
+                                             "holdout_v3.jsonl")
+              for r in load_jsonl(EVAL / name)}
+    assert not (set(texts) & others)
+
+
+def test_benign_fpr_set_is_not_in_generated_training_data(generated):
+    out, _, _ = generated
+    train = {r["text"].lower() for name in ("hard_negatives_train.jsonl",
+                                            "hard_negatives_v3_train.jsonl")
+             for r in load_jsonl(out / name)}
+    rows = load_jsonl(EVAL / "benign_fpr.jsonl")
+    assert not ({r["text"].lower() for r in rows} & train)
