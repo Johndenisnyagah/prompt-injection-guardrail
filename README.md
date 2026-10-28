@@ -6,7 +6,7 @@ A fine-tuned binary classifier that intercepts prompt-injection attacks before t
 
 https://github.com/user-attachments/assets/d596c3b8-aa8c-48ad-8075-bcb0ac600758
 
-
+<sub>Music: "Happy Beats / Business Moves Vol. 1" by Sascha Ende, [ende.app](https://ende.app/en) ([CC BY 4.0](https://ende.app/en/standard-license)). Sound effects: [Kenney](https://kenney.nl/) (CC0).</sub>
 
 Built on Meta's `Llama-Prompt-Guard-2-86M` (mDeBERTa-v3-base backbone), fine-tuned on 12,858 samples aggregated from three public security datasets plus targeted synthetic augmentation.
 
