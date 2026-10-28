@@ -2,6 +2,12 @@
 
 A fine-tuned binary classifier that intercepts prompt-injection attacks before they reach an LLM, served as a local HTTP API.
 
+
+
+https://github.com/user-attachments/assets/d596c3b8-aa8c-48ad-8075-bcb0ac600758
+
+
+
 Built on Meta's `Llama-Prompt-Guard-2-86M` (mDeBERTa-v3-base backbone), fine-tuned on 12,858 samples aggregated from three public security datasets plus targeted synthetic augmentation.
 
 **Weights:** [Johnnyagah/Llama-Prompt-Guard-2-86M-injection-guardrail](https://huggingface.co/Johnnyagah/Llama-Prompt-Guard-2-86M-injection-guardrail) · **Built with Llama** · weights under the [Llama 4 Community License](https://developer.meta.com/ai/llama4/license/), code under MIT ([details](#licences))
