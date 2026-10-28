@@ -10,7 +10,7 @@ from transformers import (
     TrainingArguments,
 )
 
-# 🔑 PASTE YOUR HUGGING FACE TOKEN HERE (KEEP THE QUOTES)
+# The base model is gated: read the token from the environment, never hardcode it.
 HF_TOKEN = os.environ.get("HF_TOKEN") 
 
 MODEL_ID = "meta-llama/Llama-Prompt-Guard-2-86M"
@@ -25,7 +25,7 @@ model = AutoModelForSequenceClassification.from_pretrained(
     token=HF_TOKEN
 )
 
-# Force execution onto your RTX 4080
+# Use the GPU when there is one (trained on an RTX 4080 laptop, 12 GB)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 
@@ -50,7 +50,7 @@ training_args = TrainingArguments(
     per_device_eval_batch_size=16,
     num_train_epochs=3,
     weight_decay=0.01,
-    fp16=True, # Mixed precision for Nvidia GPUs
+    fp16=torch.cuda.is_available(),  # mixed precision needs CUDA; CPU runs use fp32
     logging_steps=20,
     report_to="none"
 )
