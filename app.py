@@ -74,7 +74,7 @@ import torch
 from fastapi import Depends, FastAPI, Header, HTTPException, status
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 # ----------------------------------------------------------------------
 # CONFIG (environment-driven; nothing sensitive in source)

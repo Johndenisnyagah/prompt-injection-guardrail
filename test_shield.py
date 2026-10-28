@@ -1,5 +1,5 @@
 import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 MODEL_PATH = "./my_custom_prompt_guard"
 

@@ -9,6 +9,16 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install "ruff>=0.16,<0.18"
+      - run: ruff check --output-format=github .
+
   tests:
     name: tests (no model download)
     runs-on: ubuntu-latest

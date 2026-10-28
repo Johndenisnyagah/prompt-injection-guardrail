@@ -25,12 +25,11 @@ import argparse
 import json
 import os
 import re
-import sys
 from collections import Counter
 
 import numpy as np
 import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 # ----------------------------------------------------------------------
 # CONFIG
