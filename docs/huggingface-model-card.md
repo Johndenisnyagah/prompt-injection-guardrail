@@ -25,12 +25,14 @@ Code, evaluation sets, tests and the FastAPI service: [github.com/Johndenisnyaga
 
 Measured in CI on sets that never influenced training or model selection ([full results](https://github.com/Johndenisnyagah/prompt-injection-guardrail/blob/main/docs/evaluation-results.md)):
 
-| Set | Fine-tuned | ProtectAI DeBERTa v2 (baseline) |
-|---|---|---|
-| Clean holdout, 60 attacks (disjoint vocabulary) | **58/60** | 60/60 |
-| Clean benign set, 100 prompts (false positives) | **8/100** | 17/100 |
-| v2 holdout, 20 attacks / 60 benign | 20/20 · 7/60 false positives | 20/20 · 38/60 |
-| Attack after 702 harmless tokens, windowed scanning | 53/60 | 30/60 |
+| Set | Fine-tuned | Stock Prompt Guard 2 (base) | ProtectAI DeBERTa v2 |
+|---|---|---|---|
+| Clean holdout, 60 attacks (disjoint vocabulary) | **58/60** | 9/60 | 60/60 |
+| Clean benign set, 100 prompts (false positives) | 8/100 | 1/100 | 17/100 |
+| v2 holdout, 20 attacks / 60 benign | 20/20 · 7/60 false positives | 14/20 · 11/60 | 20/20 · 38/60 |
+| Attack after 702 harmless tokens, windowed scanning | **53/60** | 2/60 | 30/60 |
+
+Fine-tuning takes the clean holdout from 9/60 to 58/60, at the cost of more false positives on the clean benign set (1/100 → 8/100).
 
 A 53-prompt hand-written set (53/53) and the in-distribution test split (recall 0.980, n=2,112) were used during development, so they are not generalisation evidence.
 
