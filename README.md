@@ -152,7 +152,11 @@ Detection degrades on attacks phrased as questions or declarative statements rat
 ├── evaluate_shield.py              # metrics, confusion matrix, threshold sweep, latency
 ├── validate_shield.py              # leakage check + validation-set eval + base ablation
 ├── eval_holdout.py                 # clean disjoint-vocabulary holdout
-└── app.py                          # FastAPI service
+├── demo.py                         # score three prompts by hand
+├── app.py                          # FastAPI service
+├── eval/                           # fixed evaluation sets (never train on these)
+├── scripts/                        # CI evaluation and regression gate
+└── tests/                          # API security and data-integrity tests (no model needed)
 ```
 
 ### Data sources
@@ -173,11 +177,21 @@ Final: 12,858 training / 2,112 test, class-balanced, stratified split.
 ### Train
 
 ```bash
+pip install -r requirements.txt
 export HF_TOKEN=hf_...        # gated repo; never hardcode this
-python3 expand_dataset.py
+python3 expand_dataset.py      # rewrites train.jsonl / test.jsonl from scratch
 python3 generate_hard_negatives.py && cat hard_negatives_train.jsonl >> train.jsonl
 python3 generate_hard_negatives_v3.py && cat hard_negatives_v3_train.jsonl >> train.jsonl
 python3 train_shield.py
+```
+
+Run the block from the top. `expand_dataset.py` rewrites `train.jsonl`, so the two `cat >>` lines are only safe after it; re-running one of them on its own appends duplicates.
+
+### Test
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q                      # API security + data integrity, no model download
 ```
 
 ### Evaluate
@@ -191,7 +205,7 @@ python3 eval_holdout.py        # clean holdout
 ### Serve
 
 ```bash
-pip install fastapi "uvicorn[standard]"
+pip install -r requirements.txt
 export GUARD_API_KEY="$(python3 -c 'import secrets;print(secrets.token_urlsafe(32))')"
 uvicorn app:app --host 127.0.0.1 --port 8000
 ```
@@ -234,3 +248,9 @@ curl -X POST http://127.0.0.1:8000/scan \
 - **Adversarial red-teaming** — probe with PyRIT or Garak rather than relying on static datasets.
 - **Quantization** — ONNX or 8-bit to cut VRAM below 200 MB. Deliberately deferred: at 86M parameters and ~20 ms, this is not currently a bottleneck.
 - **Larger clean holdouts** — the current n=60 is too small for tight confidence intervals, and both holdouts are template-generated.
+
+---
+
+## How this was built
+
+The training and evaluation scripts were written with AI assistance. I chose the approach, ran every training and evaluation round on my own GPU, and diagnosed each iteration from its measured failures, as described above. The tests, CI evaluation and long-input fix added from October 2026 were built with Claude Code as a pair programmer, and I reviewed each change before merging it. The evidence that the model works is the evaluation, not the tools that helped write it. Changes are listed in [`CHANGELOG.md`](CHANGELOG.md); to report a vulnerability, see [`SECURITY.md`](SECURITY.md).

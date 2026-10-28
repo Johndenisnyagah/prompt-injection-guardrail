@@ -1,3 +1,7 @@
+"""Quick manual check: score three prompts with the local model.
+
+Run: python3 demo.py  (needs ./my_custom_prompt_guard from train_shield.py)
+"""
 import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
