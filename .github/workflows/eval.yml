@@ -44,7 +44,7 @@ jobs:
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -r requirements-dev.txt sentencepiece tiktoken protobuf
       - name: Cache model weights
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/huggingface
           key: hf-${{ hashFiles('scripts/eval_models.py') }}
