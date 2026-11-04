@@ -2,7 +2,7 @@
 # Dependabot proposes updates weekly; CI must pass before one is merged.
 torch>=2.2,<3
 transformers>=4.46,<6
-accelerate>=0.30,<2
+accelerate>=1.15.0,<2
 datasets>=5.1.0,<6
 pandas>=3.0.6,<4
 scikit-learn>=1.4,<2
