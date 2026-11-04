@@ -34,7 +34,7 @@ jobs:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}   # optional; only the gated base model needs it
       HF_HUB_DISABLE_PROGRESS_BARS: "1"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
